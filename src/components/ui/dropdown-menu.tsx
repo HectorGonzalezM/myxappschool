@@ -34,14 +34,14 @@ const DropdownMenuItem = React.forwardRef<
     asChild?: boolean;
   }
 >(({ className, asChild = false, ...props }, ref) => {
-  const Comp = asChild ? DropdownMenuPrimitive.Item : "div";
   return (
-    <Comp
+    <DropdownMenuPrimitive.Item
       ref={ref}
       className={cn(
         "flex cursor-pointer select-none items-center rounded-sm text-sm text-gray-700 hover:bg-gray-100",
         className
       )}
+      asChild={asChild}
       {...props}
     />
   );
@@ -78,4 +78,3 @@ export {
   DropdownMenuItem,
   DropdownMenuCheckboxItem, // Export the new component
 };
-

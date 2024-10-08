@@ -3,6 +3,9 @@
 import type { Config } from "tailwindcss";
 import typography from "@tailwindcss/typography"; // Import the typography plugin
 
+// Define the ThemeFunction type
+type ThemeFunction = (key: string) => string | undefined;
+
 const config: Config = {
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
@@ -15,9 +18,11 @@ const config: Config = {
         background: "var(--background)",
         foreground: "var(--foreground)",
         // Add any additional colors or customizations here
+        primary: "var(--primary)", // Ensure 'primary' is defined
+        "primary-dark": "var(--primary-dark)", // Ensure 'primary-dark' is defined
       },
       // Optional: Customize typography styles
-      typography: (theme) => ({
+      typography: (theme: ThemeFunction) => ({
         DEFAULT: {
           css: {
             color: theme("colors.foreground"),

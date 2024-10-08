@@ -5,7 +5,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
-import { Loader } from 'lucide-react';
+import { Loader, X } from 'lucide-react'; // Import X icon for the close button
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import autosize from 'autosize';
@@ -87,7 +87,16 @@ export default function AskDataModalContent({
   }, [responseText]);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
+      {/* Close Button */}
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 focus:outline-none"
+        aria-label="Close Modal"
+      >
+        <X className="h-6 w-6" />
+      </button>
+
       <h2 className="text-xl font-bold mb-4">Ask Data</h2>
       <div
         className="flex-1 overflow-auto mb-4 p-4 bg-gray-50 rounded-lg"
@@ -137,4 +146,3 @@ export default function AskDataModalContent({
     </div>
   );
 }
-

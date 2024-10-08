@@ -5,6 +5,7 @@ import Insights from '@/components/Insights';
 import clientPromise from '@/lib/mongodb';
 import { format, formatDistanceToNow } from 'date-fns';
 import Sentiment from 'sentiment';
+import { Collection } from 'mongodb'; // Import Collection type
 
 interface Batch {
   batchNumber: number;
@@ -24,11 +25,26 @@ interface Tweet {
   batchNumber?: number; // Added to associate tweet with its batch
 }
 
+interface MappedTweet {
+  batchNumber: number;
+  Profile_Picture: string;
+  Name: string;
+  User: string;
+  Tweet: string;
+  Likes: number;
+  Replies: number;
+  Retweets: number;
+  Views: number;
+  DateTime: string;
+  Display_Time: string;
+  Sentiment: string;
+}
+
 async function getTotalTweets(): Promise<number> {
   try {
     const client = await clientPromise;
     const db = client.db('tweet_db');
-    const collection = db.collection('tweets');
+    const collection = db.collection<Tweet>('tweets'); // Typed collection
 
     // Get the total number of tweets
     const totalTweets = await collection.countDocuments();
@@ -53,7 +69,7 @@ async function getBatches(): Promise<Batch[]> {
     try {
       const client = await clientPromise;
       const db = client.db('tweet_db');
-      const collection = db.collection('tweets');
+      const collection = db.collection<Tweet>('tweets'); // Typed collection
 
       // Fetch tweets in the current batch sorted by datetime_attr descending
       const tweetsInBatch = await collection
@@ -61,7 +77,17 @@ async function getBatches(): Promise<Batch[]> {
         .sort({ datetime_attr: -1 })
         .skip(skipValue)
         .limit(BATCH_SIZE)
-        .project({ datetime_attr: 1 })
+        .project({ // Include all necessary fields
+          profile_image: 1,
+          name: 1,
+          username: 1,
+          tweet_content: 1,
+          likes: 1,
+          replies: 1,
+          retweets: 1,
+          views: 1,
+          datetime_attr: 1,
+        })
         .toArray();
 
       if (tweetsInBatch.length > 0) {
@@ -87,14 +113,14 @@ async function getBatches(): Promise<Batch[]> {
   return batches;
 }
 
-async function getTweets(batchNumbers: number[]): Promise<any[]> {
+async function getTweets(batchNumbers: number[]): Promise<MappedTweet[]> {
   const BATCH_SIZE = 100;
   const skipValues = batchNumbers.map((batchNumber) => (batchNumber - 1) * BATCH_SIZE);
 
   try {
     const client = await clientPromise;
     const db = client.db('tweet_db');
-    const collection = db.collection('tweets');
+    const collection: Collection<Tweet> = db.collection<Tweet>('tweets'); // Typed collection
 
     let tweets: Tweet[] = [];
 
@@ -104,6 +130,7 @@ async function getTweets(batchNumbers: number[]): Promise<any[]> {
         .sort({ datetime_attr: -1 })
         .skip(skipValue)
         .limit(BATCH_SIZE)
+        // .project({ datetime_attr: 1 }) // Removed projection to fetch all fields
         .toArray();
 
       // Add batch number to each tweet
@@ -117,7 +144,7 @@ async function getTweets(batchNumbers: number[]): Promise<any[]> {
     // Process tweets as before
     const sentiment = new Sentiment();
 
-    const mappedTweets = tweets.map((tweet) => {
+    const mappedTweets: MappedTweet[] = tweets.map((tweet) => {
       const tweetContent = tweet.tweet_content || '';
       const sentimentResult = sentiment.analyze(tweetContent);
       let sentimentLabel = 'Neutral';
@@ -131,7 +158,7 @@ async function getTweets(batchNumbers: number[]): Promise<any[]> {
         batchNumber: tweet.batchNumber || 1, // Default to 1 if undefined
         Profile_Picture: tweet.profile_image || '/default-profile.png',
         Name: tweet.name || 'Unknown',
-        User: tweet.username || '@unknown',
+        User: tweet.username || 'unknown',
         Tweet: tweetContent,
         Likes: tweet.likes || 0,
         Replies: tweet.replies || 0,
@@ -161,26 +188,28 @@ export default async function Home({
 
   // Get the selected batch numbers from query params or default to the first batch
   const selectedBatchNumbers = searchParams.batches
-    ? searchParams.batches.split(',').map((num) => parseInt(num, 10)).filter((num) => !isNaN(num))
+    ? searchParams.batches
+        .split(',')
+        .map((num) => parseInt(num, 10))
+        .filter((num) => !isNaN(num))
     : [1];
 
   const tweets = await getTweets(selectedBatchNumbers);
 
   return (
-    <main className="flex min-h-screen">
-      {/* Sidebar */}
-      <div className="w-1/4 p-4">
+    <main className="flex flex-col md:flex-row min-h-screen">
+      {/* Insights */}
+      <div className="md:w-1/2 w-full p-4">
         <Insights
           tweets={tweets}
           batches={batches}
           selectedBatchNumbers={selectedBatchNumbers}
         />
       </div>
-      {/* Main content */}
-      <div className="w-3/4 p-4">
+      {/* Tweets */}
+      <div className="md:w-1/2 w-full p-4">
         <TweetDisplayer initialTweets={tweets} />
       </div>
     </main>
   );
 }
-

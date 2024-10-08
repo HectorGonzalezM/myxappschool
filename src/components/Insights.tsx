@@ -35,10 +35,6 @@ import AskDataModalContent from './AskDataModalContent'; // Import the new compo
 // Import the custom hook
 import useLockBodyScroll from '@/hooks/useLockBodyScroll'; // Adjust the path if necessary
 
-// Import Checkbox if needed (assuming you have a custom Checkbox component)
-// If DropdownMenuCheckboxItem handles checkboxes internally, you might not need this
-// import { Checkbox } from './ui/checkbox'; 
-
 // Define the Batch interface
 interface Batch {
   batchNumber: number;
@@ -71,7 +67,7 @@ export default function Insights({
   // State to manage which graphs are displayed
   const [selectedGraphs, setSelectedGraphs] = useState<string[]>([
     'Engagement Metrics',
-    'Tweets Over Time',
+    'Sentiment Analysis', // "Tweets Over Time" is now excluded
   ]);
 
   // State to manage selected batches
@@ -206,62 +202,6 @@ export default function Insights({
     },
   };
 
-  // Likes Over Time - Line Chart
-  const likesOverTimeData = {
-    labels: timeLabels,
-    datasets: [
-      {
-        label: 'Likes Over Time',
-        data: sortedTweets.map((tweet) => tweet.Likes),
-        borderColor: 'rgba(220, 38, 38, 0.5)', // Tailwind red-600
-        backgroundColor: 'rgba(220, 38, 38, 0.5)',
-      },
-    ],
-  };
-
-  // Retweets Over Time - Line Chart
-  const retweetsOverTimeData = {
-    labels: timeLabels,
-    datasets: [
-      {
-        label: 'Retweets Over Time',
-        data: sortedTweets.map((tweet) => tweet.Retweets),
-        borderColor: 'rgba(16, 185, 129, 0.5)', // Tailwind green-500
-        backgroundColor: 'rgba(16, 185, 129, 0.5)',
-      },
-    ],
-  };
-
-  // Replies Over Time - Line Chart
-  const repliesOverTimeData = {
-    labels: timeLabels,
-    datasets: [
-      {
-        label: 'Replies Over Time',
-        data: sortedTweets.map((tweet) => tweet.Replies),
-        borderColor: 'rgba(59, 130, 246, 0.5)', // Tailwind blue-500
-        backgroundColor: 'rgba(59, 130, 246, 0.5)',
-      },
-    ],
-  };
-
-  const individualMetricsOptions = {
-    responsive: true,
-    scales: {
-      x: {
-        type: 'time' as const,
-        time: {
-          unit: 'day' as const,
-        },
-      },
-    },
-    plugins: {
-      legend: {
-        position: 'top' as const,
-      },
-    },
-  };
-
   // Sentiment Analysis Data - Horizontal Bar Chart
   const sentimentCounts = tweets.reduce(
     (acc, tweet) => {
@@ -357,127 +297,6 @@ export default function Insights({
       );
     }
 
-    if (selectedGraphs.includes('Likes Over Time')) {
-      graphs.push(
-        <div
-          key="Likes Over Time"
-          className="graph-container cursor-pointer"
-          onClick={() =>
-            openModal(
-              <Line
-                data={likesOverTimeData}
-                options={{
-                  ...individualMetricsOptions,
-                  plugins: {
-                    ...individualMetricsOptions.plugins,
-                    title: {
-                      display: true,
-                      text: 'Likes Over Time',
-                    },
-                  },
-                }}
-              />
-            )
-          }
-        >
-          <Line
-            data={likesOverTimeData}
-            options={{
-              ...individualMetricsOptions,
-              plugins: {
-                ...individualMetricsOptions.plugins,
-                title: {
-                  display: true,
-                  text: 'Likes Over Time',
-                },
-              },
-            }}
-          />
-        </div>
-      );
-    }
-
-    if (selectedGraphs.includes('Retweets Over Time')) {
-      graphs.push(
-        <div
-          key="Retweets Over Time"
-          className="graph-container cursor-pointer"
-          onClick={() =>
-            openModal(
-              <Line
-                data={retweetsOverTimeData}
-                options={{
-                  ...individualMetricsOptions,
-                  plugins: {
-                    ...individualMetricsOptions.plugins,
-                    title: {
-                      display: true,
-                      text: 'Retweets Over Time',
-                    },
-                  },
-                }}
-              />
-            )
-          }
-        >
-          <Line
-            data={retweetsOverTimeData}
-            options={{
-              ...individualMetricsOptions,
-              plugins: {
-                ...individualMetricsOptions.plugins,
-                title: {
-                  display: true,
-                  text: 'Retweets Over Time',
-                },
-              },
-            }}
-          />
-        </div>
-      );
-    }
-
-    if (selectedGraphs.includes('Replies Over Time')) {
-      graphs.push(
-        <div
-          key="Replies Over Time"
-          className="graph-container cursor-pointer"
-          onClick={() =>
-            openModal(
-              <Line
-                data={repliesOverTimeData}
-                options={{
-                  ...individualMetricsOptions,
-                  plugins: {
-                    ...individualMetricsOptions.plugins,
-                    title: {
-                      display: true,
-                      text: 'Replies Over Time',
-                    },
-                  },
-                }}
-              />
-            )
-          }
-        >
-          <Line
-            data={repliesOverTimeData}
-            options={{
-              ...individualMetricsOptions,
-              plugins: {
-                ...individualMetricsOptions.plugins,
-                title: {
-                  display: true,
-                  text: 'Replies Over Time',
-                },
-              },
-            }}
-          />
-        </div>
-      );
-    }
-
-    // Sentiment Analysis - Horizontal Bar Chart
     if (selectedGraphs.includes('Sentiment Analysis')) {
       graphs.push(
         <div
@@ -494,25 +313,93 @@ export default function Insights({
       );
     }
 
+    // Additional graphs can be added here following the same pattern
+
     return graphs;
   };
 
-  // Updated graph options to include 'Sentiment Analysis'
+  // Calculate KPIs
+  const totalTweets = tweets.length;
+
+  const totalLikes = tweets.reduce((sum, tweet) => sum + (tweet.Likes || 0), 0);
+  const averageLikes = totalLikes / totalTweets || 0;
+
+  const totalRetweets = tweets.reduce((sum, tweet) => sum + (tweet.Retweets || 0), 0);
+  const averageRetweets = totalRetweets / totalTweets || 0;
+
+  const totalReplies = tweets.reduce((sum, tweet) => sum + (tweet.Replies || 0), 0);
+  const averageReplies = totalReplies / totalTweets || 0;
+
+  const sentimentPercentage = {
+    positive: totalTweets > 0 ? ((sentimentCounts.positive / totalTweets) * 100).toFixed(1) : '0.0',
+    neutral: totalTweets > 0 ? ((sentimentCounts.neutral / totalTweets) * 100).toFixed(1) : '0.0',
+    negative: totalTweets > 0 ? ((sentimentCounts.negative / totalTweets) * 100).toFixed(1) : '0.0',
+  };
+
+  // Calculate total engagements
+  const totalEngagements = tweets.reduce(
+    (sum, tweet) =>
+      sum + (tweet.Likes || 0) + (tweet.Retweets || 0) + (tweet.Replies || 0),
+    0
+  );
+
+  // Function to render the KPIs
+  const renderKPIs = () => (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+      {/* Existing KPI cards */}
+      <div className="p-4 bg-white rounded-lg shadow-md">
+        <p className="text-sm text-gray-500">Total Tweets</p>
+        <p className="text-2xl font-bold">{totalTweets}</p>
+      </div>
+      <div className="p-4 bg-white rounded-lg shadow-md">
+        <p className="text-sm text-gray-500">Avg Likes per Tweet</p>
+        <p className="text-2xl font-bold">{averageLikes.toFixed(1)}</p>
+      </div>
+      <div className="p-4 bg-white rounded-lg shadow-md">
+        <p className="text-sm text-gray-500">Avg Retweets per Tweet</p>
+        <p className="text-2xl font-bold">{averageRetweets.toFixed(1)}</p>
+      </div>
+      <div className="p-4 bg-white rounded-lg shadow-md">
+        <p className="text-sm text-gray-500">Avg Replies per Tweet</p>
+        <p className="text-2xl font-bold">{averageReplies.toFixed(1)}</p>
+      </div>
+      <div className="p-4 bg-white rounded-lg shadow-md">
+        <p className="text-sm text-gray-500">Positive Tweets</p>
+        <p className="text-2xl font-bold">{sentimentPercentage.positive}%</p>
+      </div>
+      <div className="p-4 bg-white rounded-lg shadow-md">
+        <p className="text-sm text-gray-500">Neutral Tweets</p>
+        <p className="text-2xl font-bold">{sentimentPercentage.neutral}%</p>
+      </div>
+      <div className="p-4 bg-white rounded-lg shadow-md">
+        <p className="text-sm text-gray-500">Negative Tweets</p>
+        <p className="text-2xl font-bold">{sentimentPercentage.negative}%</p>
+      </div>
+      {/* New KPI card for Total Engagements */}
+      <div className="p-4 bg-white rounded-lg shadow-md">
+        <p className="text-sm text-gray-500">Total Engagements</p>
+        <p className="text-2xl font-bold">{totalEngagements}</p>
+      </div>
+    </div>
+  );
+
+  // Predefined graph options
   const graphOptions = [
     'Engagement Metrics',
     'Tweets Over Time',
-    'Likes Over Time',
-    'Retweets Over Time',
-    'Replies Over Time',
-    'Sentiment Analysis', // Added Sentiment Analysis
+    'Sentiment Analysis',
+    // Add more graph names if any
   ];
 
   return (
     <div>
-      <h2 className="text-xl font-bold mb-4">Insights</h2>
-      
+      <h2 className="text-2xl font-bold mb-6">Insights</h2>
+
+      {/* Render KPIs */}
+      {renderKPIs()}
+
       {/* Buttons */}
-      <div className="mb-4 flex space-x-2 items-center">
+      <div className="mb-4 flex flex-wrap items-center space-x-2">
         {/* Graph Selection Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -523,7 +410,7 @@ export default function Insights({
           <DropdownMenuContent>
             {graphOptions.map((graphName) => (
               <DropdownMenuItem key={graphName} asChild>
-                <label className="flex items-center px-2 py-2 w-full">
+                <label className="flex items-center px-2 py-2 w-full cursor-pointer">
                   <input
                     type="checkbox"
                     checked={selectedGraphs.includes(graphName)}
@@ -565,7 +452,7 @@ export default function Insights({
 
       {/* Graphs */}
       <div className="space-y-8">{renderGraphs()}</div>
-      
+
       {/* Modals */}
       <Modal isOpen={isModalOpen} onClose={closeModal}>
         {modalContent}
